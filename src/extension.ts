@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 
 import {
     EXTENSION_NAME,
-    APPEND_SYMBOL,
 } from './params/params';
 import {
     BuildModes,
@@ -16,7 +15,6 @@ import {
 } from './items/statusBarItems';
 import { modeHandler } from './handlers/modeHandler';
 import {
-    showInfo,
     updateActivationState,
     setContextValue,
     createStatusBarItem,
@@ -29,12 +27,11 @@ import {
     pathJoin,
     getAbsolutePath,
     rmdirRecursive,
-    isPathExists,
     getRelativePath,
 } from './utils/fileUtils';
 import { getConfig } from './utils/configUtils';
 
-
+let isBuildAndRun: boolean = false;
 let workspaceFolder: vscode.WorkspaceFolder | undefined;
 let showStatusBarItems: boolean = true;
 
@@ -65,6 +62,13 @@ export function activate(context: vscode.ExtensionContext) {
     ) {
         return;
     }
+
+    vscode.tasks.onDidEndTask(e => {
+        if (e.execution.task.name === '编译') {
+            isBuildAndRun && runTask();
+            isBuildAndRun = false;
+        }
+    });
 
     workspaceFolder = vscode.workspace.workspaceFolders[0];
 
@@ -269,26 +273,22 @@ async function buildTask() {
 
     cmds.push(cmd);
 
-    await runVscodeTask('编译', cmds.join(' && '));
+    runVscodeTask('编译', cmds.join(' && '));
 }
 
 async function runTask() {
-    const buildPath = getAbsolutePath(getConfig('buildPath', '.build'));
+    const buildPath      = getAbsolutePath(getConfig('buildPath', '.build'));
     const buildBinFolder = pathJoin(buildPath, buildMode, 'bin');
+    const binName        = `${workspaceFolder?.name}.exe`;
 
-    const binPath = `${buildBinFolder}/${workspaceFolder?.name}.exe`;
+    const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName}`;
 
-    if (!isPathExists(binPath)) {
-        showInfo('未找到可执行文件。');
-        return;
-    }
-
-    await runVscodeTask('运行', binPath);
+    runVscodeTask('运行', cmd);
 }
 
 async function buildAndRunTask() {
-    await buildTask();
-    await runTask();
+    isBuildAndRun = true;
+    buildTask();
 }
 
 async function rebuildTask() {

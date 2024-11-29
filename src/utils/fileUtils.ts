@@ -119,3 +119,22 @@ export function rmdirRecursive(path: string) {
         fs.rmSync(path, { recursive: true });
     } catch (err) {}
 }
+
+
+export function readFile(filePath: string) {
+    try {
+        return fs.readFileSync(filePath, 'utf8');
+    } catch (err) {
+        return null;
+    }
+}
+
+export function writeFile(filePath: string, content: string) {
+    try {
+        mkdirRecursive(filePath);
+        fs.writeFileSync(filePath, content, 'utf8');
+        return true;
+    } catch (err) {
+        return false;
+    }
+}

@@ -46,7 +46,6 @@ export function runVscodeTask(taskName: string, command: string, problemMatcher:
         execution,
         problemMatcher,
     );
-
     return vscode.tasks.executeTask(task);
 }
 
