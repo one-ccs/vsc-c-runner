@@ -1,23 +1,161 @@
 {
   "name": "vsc-c-runner",
-  "displayName": "vsc-c-runner",
+  "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.0.1",
+  "version": "0.1.0",
+  "publisher": "one-ccs",
+  "license": "MIT",
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.95.0"
   },
   "categories": [
-    "Other"
+    "Programming Languages",
+    "Debuggers",
+    "Snippets"
   ],
-  "activationEvents": [],
+  "tags": [
+    "c",
+    "run",
+    "compile",
+    "build",
+    "debug"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/one-ccs/vsc-c-runner.git"
+  },
+  "homepage": "https://github.com/one-ccs/vsc-c-runner#readme",
+  "bugs": {
+    "url": "https://github.com/one-ccs/vsc-c-runner/issues"
+  },
+  "activationEvents": [
+    "onLanguage:c",
+    "workspaceContains:*.h",
+    "workspaceContains:*.c"
+  ],
   "main": "./out/extension.js",
   "contributes": {
+    "taskDefinitions": [
+      {
+        "type": "C_Runner"
+      }
+    ],
     "commands": [
       {
-        "command": "vsc-c-runner.helloWorld",
-        "title": "Hello World"
+        "command": "C_Runner.selectMode",
+        "title": "选择编译模式",
+        "when": "C_Runner:activatedExtension",
+        "category": "C Project Runner"
+      },
+      {
+        "command": "C_Runner.build",
+        "title": "编译",
+        "when": "C_Runner:activatedExtension",
+        "category": "C Project Runner"
+      },
+      {
+        "command": "C_Runner.run",
+        "title": "运行",
+        "when": "C_Runner:activatedExtension",
+        "category": "C Project Runner"
+      },
+      {
+        "command": "C_Runner.rebuild",
+        "title": "重新生成",
+        "when": "C_Runner:activatedExtension",
+        "category": "C Project Runner"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "C Project Runner",
+      "properties": {
+        "C_Runner.buildPath": {
+          "description": "编译文件保存路径",
+          "scope": "resource",
+          "type": "string",
+          "default": ".build"
+        },
+        "C_Runner.compilerPath": {
+          "description": "编译器路径",
+          "scope": "resource",
+          "type": "string",
+          "default": "gcc"
+        },
+        "C_Runner.resCompilerPath": {
+          "description": "资源编译器路径 (用于编译 \".rc\" 文件)",
+          "scope": "resource",
+          "type": "string",
+          "default": "windres"
+        },
+        "C_Runner.compilerOptions": {
+          "description": "编译器选项",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-Wall",
+            "-O3"
+          ]
+        },
+        "C_Runner.linkerLibs": {
+          "description": "要链接的库, 例: [\"ws2_32\", \"sqlite3\"]",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+          ]
+        },
+        "C_Runner.linkerLibPaths": {
+          "description": "链接库文件路径, 例: [\"src/sqlite3\"]",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+          ]
+        },
+        "C_Runner.includes": {
+          "description": "包含文件或文件夹",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "main.c",
+            "lib/**/*.c",
+            "src/**/*.rc"
+          ]
+        },
+        "C_Runner.excludes": {
+          "description": "排除文件或文件夹",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+          ]
+        },
+        "C_Runner.runArgs": {
+          "description": "运行参数",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+          ]
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -25,7 +163,11 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "package": "vsce package",
+    "publish:major": "vsce publish major",
+    "publish:minor": "vsce publish minor",
+    "publish:patch": "vsce publish patch"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",
