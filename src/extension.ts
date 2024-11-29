@@ -21,6 +21,7 @@ import {
     disposeItem,
     runVscodeTask,
     showInfo,
+    showWarning,
 } from './utils/vscodeUtils';
 import {
     getBuildPath,
@@ -69,7 +70,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.tasks.onDidEndTask(e => {
         if (e.execution.task.name === '编译') {
             isBuildAndRun && runTask();
-            isBuildAndRun = false;
         }
     });
 
@@ -265,6 +265,11 @@ async function buildTask() {
     const absBinPath = pathJoin(buildBinFolder, binName);
     const relBinPath = getRelativePath(absBinPath);
 
+    if (!needCompileFiles.length && isPathExists(absBinPath)) {
+        showInfo('无需编译');
+        return false;
+    }
+
     mkdirRecursive(absBinPath);
 
     let cmd = compilerPath;
@@ -280,23 +285,34 @@ async function buildTask() {
 
     cmds.push(cmd);
 
-    runVscodeTask('编译', cmds.join(' && '));
+    return runVscodeTask('编译', cmds.join(' && '));
 }
 
 async function runTask() {
+    isBuildAndRun = false;
+
     const buildPath      = getBuildPath();
     const buildBinFolder = pathJoin(buildPath, buildMode, 'bin');
     const runArgs        = getConfig('runArgs', []) as string[];
     const binName        = `${workspaceFolder?.name}.exe`;
 
+    if (!isPathExists(pathJoin(buildBinFolder, binName))) {
+        showWarning('未找到可执行文件, 请先编译。');
+        return false;
+    }
+
     const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName} ${runArgs.join(' ')}`;
 
-    runVscodeTask('运行', cmd);
+    return runVscodeTask('运行', cmd);
 }
 
 async function buildAndRunTask() {
     isBuildAndRun = true;
-    buildTask();
+
+    if (!(await buildTask())) {
+        // 无需编译
+        runTask();
+    }
 }
 
 async function rebuildTask() {
