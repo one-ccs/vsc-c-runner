@@ -1,9 +1,6 @@
 # Change Log
 
-All notable changes to the "vsc-c-runner" extension will be documented in this file.
+## [0.0.1]
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+- 初始化项目
+- 完成编译、运行、编译并运行、重新生成功能

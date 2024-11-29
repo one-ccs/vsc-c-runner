@@ -1,8 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 import * as vscode from 'vscode';
 
 import { getConfig } from './configUtils';
+import { showWarning } from './vscodeUtils';
+import { BuildModes } from '../types/enums';
+import { buildMode } from '../extension';
 
 
 /**
@@ -42,6 +46,10 @@ export async function getFiles(): Promise<string[]> {
     files = files.map(file => getRelativePath(file));
 
     return files;
+}
+
+export function getBuildPath() {
+    return getAbsolutePath(getConfig('buildPath', '.build'));
 }
 
 /**
@@ -120,21 +128,64 @@ export function rmdirRecursive(path: string) {
     } catch (err) {}
 }
 
+/**
+ * 计算文件 md5 值
+ * @param filePath 文件路径
+ * @returns md5
+ */
+function getFileMd5(filePath: string): string {
+    const buffer = fs.readFileSync(getAbsolutePath(filePath), { encoding: 'utf8', flag: 'r' });
+    const md5 = crypto.createHash('md5').update(buffer).digest('hex');
+    return md5;
+}
 
-export function readFile(filePath: string) {
+export function loadRecord(): {[key: string]: any} {
+    const recordPath = pathJoin(getBuildPath(), 'record');
+
     try {
-        return fs.readFileSync(filePath, 'utf8');
+        const text = fs.readFileSync(recordPath, { encoding: 'utf8', flag: 'r' }) || '{}';
+        return JSON.parse(text);
     } catch (err) {
-        return null;
+        return {};
     }
 }
 
-export function writeFile(filePath: string, content: string) {
+export function dumpRecord(record: {}) {
+    const recordPath = pathJoin(getBuildPath(), 'record');
+
+    mkdirRecursive(recordPath);
     try {
-        mkdirRecursive(filePath);
-        fs.writeFileSync(filePath, content, 'utf8');
-        return true;
+        const text = JSON.stringify(record);
+        fs.writeFileSync(recordPath, text, { encoding: 'utf8', flag: 'w' });
     } catch (err) {
-        return false;
+        showWarning('编译记录保存失败。');
     }
+}
+
+export function withNeedCompile(filePaths: string[]): string[] {
+    const files: string[] = [];
+    // 读取编译记录
+    const record = loadRecord();
+
+    if (!record.hasOwnProperty(BuildModes.debug)) {
+        record[BuildModes.debug] = {};
+    }
+    if (!record.hasOwnProperty(BuildModes.release)) {
+        record[BuildModes.release] = {};
+    }
+
+    // 若记录不存在, 或文件 md5 值不同, 则需要编译
+    for (const filePath of filePaths) {
+        const md5 = getFileMd5(filePath);
+
+        if (record[buildMode][filePath] !== md5) {
+            files.push(filePath);
+            record[buildMode][filePath] = md5;
+        }
+    }
+
+    // 更新编译记录
+    dumpRecord(record);
+
+    return files;
 }

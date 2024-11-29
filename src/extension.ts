@@ -20,14 +20,17 @@ import {
     createStatusBarItem,
     disposeItem,
     runVscodeTask,
+    showInfo,
 } from './utils/vscodeUtils';
 import {
+    getBuildPath,
     getFiles,
     mkdirRecursive,
     pathJoin,
-    getAbsolutePath,
     rmdirRecursive,
     getRelativePath,
+    withNeedCompile,
+    isPathExists,
 } from './utils/fileUtils';
 import { getConfig } from './utils/configUtils';
 
@@ -208,7 +211,7 @@ function initRebuildStatusBar() {
 }
 
 async function buildTask() {
-    const buildPath       = getAbsolutePath(getConfig('buildPath', '.build'));
+    const buildPath       = getBuildPath();
     const buildObjFolder  = pathJoin(buildPath, buildMode, 'obj');
     const buildBinFolder  = pathJoin(buildPath, buildMode, 'bin');
     const resCompilerPath = getConfig('resCompilerPath', 'windres') as string;
@@ -216,10 +219,12 @@ async function buildTask() {
     const compilerOptions = getConfig('compilerOptions', []) as string[];
     const linkerLibs      = getConfig('linkerLibs', []) as string[];
     const linkerLibPaths  = getConfig('linkerLibPaths', []) as string[];
+    const binName         = `${workspaceFolder?.name}.exe`;
 
     const cmds = [];
     const objs = [];
     const files = await getFiles();
+    const needCompileFiles = withNeedCompile(files);
 
     for (const file of files) {
         // 创建目录
@@ -239,7 +244,7 @@ async function buildTask() {
             cmd += ' ';
             cmd += `-o ${(objPath)}`;
 
-            cmds.push(cmd);
+            needCompileFiles.includes(file) && cmds.push(cmd);
             objs.push(objPath);
         }
         // 编译资源文件
@@ -252,18 +257,20 @@ async function buildTask() {
             cmd += ' ';
             cmd += `-o ${resPath}`;
 
-            cmds.push(cmd);
+            needCompileFiles.includes(file) && cmds.push(cmd);
             objs.push(resPath);
         }
-
     }
     // 链接文件并生成可执行文件
-    mkdirRecursive(`${buildBinFolder}/${workspaceFolder?.name}.exe`);
-    const binPath = getRelativePath(`${buildBinFolder}/${workspaceFolder?.name}.exe`);
+    const absBinPath = pathJoin(buildBinFolder, binName);
+    const relBinPath = getRelativePath(absBinPath);
+
+    mkdirRecursive(absBinPath);
+
     let cmd = compilerPath;
 
     cmd += ' ';
-    cmd += `-o ${binPath}`;
+    cmd += `-o ${relBinPath}`;
     cmd += ' ';
     cmd += objs.join(' ');
     cmd += ' ';
@@ -277,11 +284,12 @@ async function buildTask() {
 }
 
 async function runTask() {
-    const buildPath      = getAbsolutePath(getConfig('buildPath', '.build'));
+    const buildPath      = getBuildPath();
     const buildBinFolder = pathJoin(buildPath, buildMode, 'bin');
+    const runArgs        = getConfig('runArgs', []) as string[];
     const binName        = `${workspaceFolder?.name}.exe`;
 
-    const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName}`;
+    const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName} ${runArgs.join(' ')}`;
 
     runVscodeTask('运行', cmd);
 }
@@ -292,7 +300,7 @@ async function buildAndRunTask() {
 }
 
 async function rebuildTask() {
-    const buildPath = getAbsolutePath(getConfig('buildPath', '.build'));
+    const buildPath = getBuildPath();
 
     rmdirRecursive(buildPath);
 

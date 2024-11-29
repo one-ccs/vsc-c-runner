@@ -13,6 +13,10 @@ export function showInfo(msg: string): void {
     vscode.window.showInformationMessage(msg);
 }
 
+export function showWarning(msg: string): void {
+    vscode.window.showWarningMessage(msg);
+}
+
 export function updateActivationState(newState: boolean) {
     extensionState?.update('activatedExtension', newState);
 }

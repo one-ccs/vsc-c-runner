@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -71,23 +71,46 @@
       "type": "object",
       "title": "C Project Runner",
       "properties": {
+        "C_Runner.includes": {
+          "description": "包含文件或文件夹",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "main.c",
+            "lib/**/*.c",
+            "src/**/*.rc"
+          ]
+        },
+        "C_Runner.excludes": {
+          "description": "排除文件或文件夹",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+          ]
+        },
         "C_Runner.buildPath": {
           "description": "编译文件保存路径",
           "scope": "resource",
           "type": "string",
           "default": ".build"
         },
-        "C_Runner.compilerPath": {
-          "description": "编译器路径",
-          "scope": "resource",
-          "type": "string",
-          "default": "gcc"
-        },
         "C_Runner.resCompilerPath": {
           "description": "资源编译器路径 (用于编译 \".rc\" 文件)",
           "scope": "resource",
           "type": "string",
           "default": "windres"
+        },
+        "C_Runner.compilerPath": {
+          "description": "编译器路径",
+          "scope": "resource",
+          "type": "string",
+          "default": "gcc"
         },
         "C_Runner.compilerOptions": {
           "description": "编译器选项",
@@ -113,29 +136,6 @@
         },
         "C_Runner.linkerLibPaths": {
           "description": "链接库文件路径, 例: [\"src/sqlite3\"]",
-          "scope": "resource",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-          ]
-        },
-        "C_Runner.includes": {
-          "description": "包含文件或文件夹",
-          "scope": "resource",
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "default": [
-            "main.c",
-            "lib/**/*.c",
-            "src/**/*.rc"
-          ]
-        },
-        "C_Runner.excludes": {
-          "description": "排除文件或文件夹",
           "scope": "resource",
           "type": "array",
           "items": {
