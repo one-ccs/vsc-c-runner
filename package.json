@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -91,8 +91,7 @@
           "items": {
             "type": "string"
           },
-          "default": [
-          ]
+          "default": []
         },
         "C_Runner.buildPath": {
           "description": "编译文件保存路径",
@@ -131,8 +130,7 @@
           "items": {
             "type": "string"
           },
-          "default": [
-          ]
+          "default": []
         },
         "C_Runner.linkerLibPaths": {
           "description": "链接库文件路径, 例: [\"src/sqlite3\"]",
@@ -141,8 +139,7 @@
           "items": {
             "type": "string"
           },
-          "default": [
-          ]
+          "default": []
         },
         "C_Runner.runArgs": {
           "description": "运行参数",
@@ -151,8 +148,7 @@
           "items": {
             "type": "string"
           },
-          "default": [
-          ]
+          "default": []
         }
       }
     }

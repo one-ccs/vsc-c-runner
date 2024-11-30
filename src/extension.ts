@@ -261,6 +261,10 @@ async function buildTask() {
             objs.push(resPath);
         }
     }
+    if (!objs.length) {
+        throw new Error('未找到需要编译的文件, 请检查文件包含规则。');
+    }
+
     // 链接文件并生成可执行文件
     const absBinPath = pathJoin(buildBinFolder, binName);
     const relBinPath = getRelativePath(absBinPath);
@@ -309,9 +313,14 @@ async function runTask() {
 async function buildAndRunTask() {
     isBuildAndRun = true;
 
-    if (!(await buildTask())) {
-        // 无需编译
-        runTask();
+    try {
+        if (!(await buildTask())) {
+            // 无需编译
+            runTask();
+        }
+    } catch (err: any) {
+        showWarning(err.message);
+        vscode.commands.executeCommand('workbench.action.openSettings', `${EXTENSION_NAME}.includes`);
     }
 }
 
