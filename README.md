@@ -10,17 +10,17 @@
 
 ```json
 {
-    "C_Runner.includes": [
+    "C_Project_Runner.includes": [
         "main.c",
         "lib/**/*.c",
         "src/**/*.rc",
         "func/**/*.c",
     ],
-    "C_Runner.linkerLibs": [
+    "C_Project_Runner.linkerLibs": [
         "ws2_32",
         "sqlite3",
     ],
-    "C_Runner.linkerLibPaths": [
+    "C_Project_Runner.linkerLibPaths": [
         "src/sqlite3",
     ]
 }
@@ -38,14 +38,31 @@
 
 ## 设置
 
-打开 [C Project Runner](vscode://settings/C_Runner.buildPath) 设置 -> 修改对应设置
+打开 [C Project Runner](vscode://settings/C_Project_Runner.buildPath) 设置 -> 修改对应设置
 
-- [includes](vscode://settings/C_Runner.includes) 包含文件或文件夹
-- [excludes](vscode://settings/C_Runner.excludes) 排除文件或文件夹
-- [buildPath](vscode://settings/C_Runner.buildPath) 编译文件保存路径
-- [resCompilerPath](vscode://settings/C_Runner.resCompilerPath) 资源编译器路径 (用于编译 ".rc" 文件)
-- [compilerPath](vscode://settings/C_Runner.compilerPath) 编译器路径
-- [compilerOptions](vscode://settings/C_Runner.compilerOptions) 编译器选项
-- [linkerLibs](vscode://settings/C_Runner.linkerLibs) 要链接的库, 例: ["ws2_32", "sqlite3"]
-- [linkerLibPaths](vscode://settings/C_Runner.linkerLibPaths) 链接库文件路径, 例: ["src/sqlite3"]
-- [runArgs](vscode://settings/C_Runner.runArgs) 运行参数
+- [includes](vscode://settings/C_Project_Runner.includes) 包含源文件的 glob 规则
+- [excludes](vscode://settings/C_Project_Runner.excludes) 排除源文件的 glob 规则 (仅支持 ** 和 *)
+- [buildPath](vscode://settings/C_Project_Runner.buildPath) 编译文件保存路径
+- [resCompilerPath](vscode://settings/C_Project_Runner.resCompilerPath) 资源编译器路径 (用于编译 ".rc" 文件)
+- [compilerPath](vscode://settings/C_Project_Runner.compilerPath) 编译器路径
+- [compilerOptions](vscode://settings/C_Project_Runner.compilerOptions) 编译器选项
+- [linkerLibs](vscode://settings/C_Project_Runner.linkerLibs) 要链接的库, 例: ["ws2_32", "sqlite3"]
+- [linkerLibPaths](vscode://settings/C_Project_Runner.linkerLibPaths) 链接库文件路径 (注: 链接库请自行拷贝到程序所在目录), 例: ["src/sqlite3"]
+- [runArgs](vscode://settings/C_Project_Runner.runArgs) 运行参数
+
+## 补充说明
+
+### 库文件使用方式
+
+以 sqlite3 为例，在官网可以下载到 `sqlite3.c`、`sqlite3.h`、`sqlite3ext.h`、`sqlite3.dll` 四个文件。
+
+- 直接使用 C 源文件
+  1. 将 `sqlite3.c`、`sqlite3.h`、`sqlite3ext.h` 作为项目文件使用，无需额外配置
+  2. 与项目文件一起编译并链接，此时 sqlite3 库代码会直接打包到 exe 中。
+
+- 使用 dll 文件：
+   1. 项目中正常 "#include" `sqlite3.h`、`sqlite3ext.h` 两个头文件。
+   2. `C_Project_Runner.linkerLibs` 设置添加 "sqlite3" 选项。
+   3. `C_Project_Runner.linkerLibPaths` 设置添加 "dll 文件所在目录"(如 "src/sqlite3") 选项。
+   4. 拷贝 `sqlite3.dll` 到程序所在目录。
+   5. 编译并运行程序，即可正常使用 sqlite3 库。

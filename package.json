@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -38,55 +38,55 @@
   "contributes": {
     "taskDefinitions": [
       {
-        "type": "C_Runner"
+        "type": "C_Project_Runner"
       }
     ],
     "commands": [
       {
-        "command": "C_Runner.selectMode",
+        "command": "C_Project_Runner.selectMode",
         "title": "选择编译模式",
-        "when": "C_Runner:activatedExtension",
+        "when": "C_Project_Runner:activatedExtension",
         "category": "C Project Runner"
       },
       {
-        "command": "C_Runner.build",
+        "command": "C_Project_Runner.build",
         "title": "编译",
-        "when": "C_Runner:activatedExtension",
+        "when": "C_Project_Runner:activatedExtension",
         "category": "C Project Runner"
       },
       {
-        "command": "C_Runner.run",
+        "command": "C_Project_Runner.run",
         "title": "运行",
-        "when": "C_Runner:activatedExtension",
+        "when": "C_Project_Runner:activatedExtension",
         "category": "C Project Runner"
       },
       {
-        "command": "C_Runner.buildAndRun",
+        "command": "C_Project_Runner.buildAndRun",
         "title": "编译并运行",
-        "when": "C_Runner:activatedExtension",
+        "when": "C_Project_Runner:activatedExtension",
         "category": "C Project Runner"
       },
       {
-        "command": "C_Runner.rebuild",
+        "command": "C_Project_Runner.rebuild",
         "title": "重新生成",
-        "when": "C_Runner:activatedExtension",
+        "when": "C_Project_Runner:activatedExtension",
         "category": "C Project Runner"
       }
     ],
     "keybindings": [
         {
-            "command": "C_Runner.buildAndRun",
+            "command": "C_Project_Runner.buildAndRun",
             "key": "ctrl+f5",
             "mac": "ctrl+f5",
-            "when": "C_Runner:activatedExtension"
+            "when": "C_Project_Runner:activatedExtension"
         }
     ],
     "configuration": {
       "type": "object",
       "title": "C Project Runner",
       "properties": {
-        "C_Runner.includes": {
-          "description": "包含文件或文件夹",
+        "C_Project_Runner.includes": {
+          "description": "包含源文件的 glob 规则",
           "scope": "resource",
           "type": "array",
           "items": {
@@ -98,8 +98,8 @@
             "src/**/*.rc"
           ]
         },
-        "C_Runner.excludes": {
-          "description": "排除文件或文件夹",
+        "C_Project_Runner.excludes": {
+          "description": "排除源文件的 glob 规则 (仅支持 ** 和 *)",
           "scope": "resource",
           "type": "array",
           "items": {
@@ -107,25 +107,25 @@
           },
           "default": []
         },
-        "C_Runner.buildPath": {
+        "C_Project_Runner.buildPath": {
           "description": "编译文件保存路径",
           "scope": "resource",
           "type": "string",
           "default": ".build"
         },
-        "C_Runner.resCompilerPath": {
+        "C_Project_Runner.resCompilerPath": {
           "description": "资源编译器路径 (用于编译 \".rc\" 文件)",
           "scope": "resource",
           "type": "string",
           "default": "windres"
         },
-        "C_Runner.compilerPath": {
+        "C_Project_Runner.compilerPath": {
           "description": "编译器路径",
           "scope": "resource",
           "type": "string",
           "default": "gcc"
         },
-        "C_Runner.compilerOptions": {
+        "C_Project_Runner.compilerOptions": {
           "description": "编译器选项",
           "scope": "resource",
           "type": "array",
@@ -137,7 +137,7 @@
             "-O3"
           ]
         },
-        "C_Runner.linkerLibs": {
+        "C_Project_Runner.linkerLibs": {
           "description": "要链接的库, 例: [\"ws2_32\", \"sqlite3\"]",
           "scope": "resource",
           "type": "array",
@@ -146,8 +146,8 @@
           },
           "default": []
         },
-        "C_Runner.linkerLibPaths": {
-          "description": "链接库文件路径, 例: [\"src/sqlite3\"]",
+        "C_Project_Runner.linkerLibPaths": {
+          "description": "链接库文件路径 (注: 链接库请自行拷贝到程序所在目录), 例: [\"src/sqlite3\"]",
           "scope": "resource",
           "type": "array",
           "items": {
@@ -155,7 +155,7 @@
           },
           "default": []
         },
-        "C_Runner.runArgs": {
+        "C_Project_Runner.runArgs": {
           "description": "运行参数",
           "scope": "resource",
           "type": "array",

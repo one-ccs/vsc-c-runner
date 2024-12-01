@@ -11,12 +11,11 @@ import { buildMode } from '../extension';
 
 /**
  * 获取匹配的文件列表（基于项目根目录的相对路径）
+ * @param includes 文件包含规则
+ * @param excludes 文件排除规则
  * @returns {Promise<string[]>}
  */
-export async function getFiles(): Promise<string[]> {
-    const includes: string[] = getConfig('includes', []);
-    const excludes: string[] = getConfig('excludes', []);
-
+export async function getFiles(includes: string[], excludes: string[]): Promise<string[]> {
     let files: string[] = [];
 
     for (const include of includes) {

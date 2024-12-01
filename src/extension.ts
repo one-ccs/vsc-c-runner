@@ -36,7 +36,6 @@ import {
 import { getConfig } from './utils/configUtils';
 
 let isBuildAndRun: boolean = false;
-let workspaceFolder: vscode.WorkspaceFolder | undefined;
 let showStatusBarItems: boolean = true;
 
 let modeStatusBar: vscode.StatusBarItem | undefined;
@@ -72,8 +71,6 @@ export function activate(context: vscode.ExtensionContext) {
             isBuildAndRun && runTask();
         }
     });
-
-    workspaceFolder = vscode.workspace.workspaceFolders[0];
 
     extensionContext = context;
     extensionPath = context.extensionPath;
@@ -211,6 +208,8 @@ function initRebuildStatusBar() {
 }
 
 async function buildTask() {
+    const includes        = getConfig('includes', []) as string[];
+    const excludes        = getConfig('excludes', []) as string[];
     const buildPath       = getBuildPath();
     const buildObjFolder  = pathJoin(buildPath, buildMode, 'obj');
     const buildBinFolder  = pathJoin(buildPath, buildMode, 'bin');
@@ -219,11 +218,11 @@ async function buildTask() {
     const compilerOptions = getConfig('compilerOptions', []) as string[];
     const linkerLibs      = getConfig('linkerLibs', []) as string[];
     const linkerLibPaths  = getConfig('linkerLibPaths', []) as string[];
-    const binName         = `${workspaceFolder?.name}.exe`;
+    const binName         = `${vscode.workspace.name}.exe`;
 
     const cmds = [];
     const objs = [];
-    const files = await getFiles();
+    const files = await getFiles(includes, excludes);
     const needCompileFiles = withNeedCompile(files);
 
     for (const file of files) {
@@ -282,10 +281,14 @@ async function buildTask() {
     cmd += `-o ${relBinPath}`;
     cmd += ' ';
     cmd += objs.join(' ');
-    cmd += ' ';
-    cmd += linkerLibs.map(lib => `-l${lib}`).join(' ');
-    cmd += ' ';
-    cmd += linkerLibPaths.map(path => `-L${path}`).join(' ');
+    if (linkerLibPaths.length) {
+        cmd += ' ';
+        cmd += linkerLibPaths.map(path => `-L${path}`).join(' ');
+    }
+    if (linkerLibs.length) {
+        cmd += ' ';
+        cmd += linkerLibs.map(lib => `-l${lib}`).join(' ');
+    }
 
     cmds.push(cmd);
 
@@ -298,7 +301,7 @@ async function runTask() {
     const buildPath      = getBuildPath();
     const buildBinFolder = pathJoin(buildPath, buildMode, 'bin');
     const runArgs        = getConfig('runArgs', []) as string[];
-    const binName        = `${workspaceFolder?.name}.exe`;
+    const binName        = `${vscode.workspace.name}.exe`;
 
     if (!isPathExists(pathJoin(buildBinFolder, binName))) {
         showWarning('未找到可执行文件, 请先编译。');
