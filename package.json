@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -61,11 +61,25 @@
         "category": "C Project Runner"
       },
       {
+        "command": "C_Runner.buildAndRun",
+        "title": "编译并运行",
+        "when": "C_Runner:activatedExtension",
+        "category": "C Project Runner"
+      },
+      {
         "command": "C_Runner.rebuild",
         "title": "重新生成",
         "when": "C_Runner:activatedExtension",
         "category": "C Project Runner"
       }
+    ],
+    "keybindings": [
+        {
+            "command": "C_Runner.buildAndRun",
+            "key": "ctrl+f5",
+            "mac": "ctrl+f5",
+            "when": "C_Runner:activatedExtension"
+        }
     ],
     "configuration": {
       "type": "object",
@@ -154,16 +168,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "compile": "tsc -p ./",
     "lint": "eslint src",
-    "test": "vscode-test",
-    "package": "vsce package",
-    "publish:major": "vsce publish major",
-    "publish:minor": "vsce publish minor",
-    "publish:patch": "vsce publish patch"
+    "pretest": "npm run compile && npm run lint",
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@types/vscode": "^1.95.0",

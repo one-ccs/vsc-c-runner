@@ -17,28 +17,16 @@
 			}
 		},
         {
-            "type": "npm",
-            "script": "package",
+            "type": "shell",
+            "command": "vsce package",
             "problemMatcher": [],
-            "label": "npm: package"
+            "label": "vsce 打包",
         },
         {
-            "type": "npm",
-            "script": "publish:major",
+            "type": "shell",
+            "command": "vsce publish",
             "problemMatcher": [],
-            "label": "vsce publish major",
-        },
-        {
-            "type": "npm",
-            "script": "publish:minor",
-            "problemMatcher": [],
-            "label": "vsce publish minor",
-        },
-        {
-            "type": "npm",
-            "script": "publish:patch",
-            "problemMatcher": [],
-            "label": "vsce publish patch",
+            "label": "vsce 发布",
         },
 	]
 }
