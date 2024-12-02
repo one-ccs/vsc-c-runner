@@ -261,7 +261,9 @@ async function buildTask() {
         }
     }
     if (!objs.length) {
-        throw new Error('未找到需要编译的文件, 请检查文件包含规则。');
+        showWarning('未找到需要编译的文件, 请检查文件包含规则。');
+        vscode.commands.executeCommand('workbench.action.openSettings', `${EXTENSION_NAME}.includes`);
+        return false;
     }
 
     // 链接文件并生成可执行文件
@@ -270,7 +272,7 @@ async function buildTask() {
 
     if (!needCompileFiles.length && isPathExists(absBinPath)) {
         showInfo('无需编译');
-        return false;
+        return true;
     }
 
     mkdirRecursive(absBinPath);
@@ -316,14 +318,8 @@ async function runTask() {
 async function buildAndRunTask() {
     isBuildAndRun = true;
 
-    try {
-        if (!(await buildTask())) {
-            // 无需编译
-            runTask();
-        }
-    } catch (err: any) {
-        showWarning(err.message);
-        vscode.commands.executeCommand('workbench.action.openSettings', `${EXTENSION_NAME}.includes`);
+    if (await buildTask()) {
+        runTask();
     }
 }
 

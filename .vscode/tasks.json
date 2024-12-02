@@ -16,17 +16,44 @@
 				"isDefault": true
 			}
 		},
+		{
+			"hide": true,
+			"label": "编译 ts",
+			"type": "shell",
+			"command": "(if exist out rmdir /s /q out) && npm run compile",
+			"problemMatcher": [],
+		},
         {
+			"hide": true,
+            "label": "vsce 打包",
             "type": "shell",
             "command": "vsce package",
             "problemMatcher": [],
-            "label": "vsce 打包",
         },
         {
+			"hide": true,
+			"label": "vsce 发布",
             "type": "shell",
             "command": "vsce publish",
             "problemMatcher": [],
-            "label": "vsce 发布",
         },
+		{
+			"label": "打包",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"编译 ts",
+				"vsce 打包",
+			],
+			"problemMatcher": [],
+		},
+		{
+			"label": "发布",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"编译 ts",
+				"vsce 发布",
+			],
+			"problemMatcher": [],
+		},
 	]
 }
