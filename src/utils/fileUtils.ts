@@ -7,6 +7,7 @@ import { getConfig } from './configUtils';
 import { showWarning } from './vscodeUtils';
 import { BuildModes } from '../types/enums';
 import { buildMode } from '../extension';
+import { FILE_ENCODING, RECORD_FILE_NAME } from '../params/params';
 
 
 /**
@@ -133,16 +134,16 @@ export function rmdirRecursive(path: string) {
  * @returns md5
  */
 function getFileMd5(filePath: string): string {
-    const buffer = fs.readFileSync(getAbsolutePath(filePath), { encoding: 'utf8', flag: 'r' });
+    const buffer = fs.readFileSync(getAbsolutePath(filePath), { encoding: FILE_ENCODING, flag: 'r' }).trim();
     const md5 = crypto.createHash('md5').update(buffer).digest('hex');
     return md5;
 }
 
 export function loadRecord(): {[key: string]: any} {
-    const recordPath = pathJoin(getBuildPath(), 'record');
+    const recordPath = pathJoin(getBuildPath(), RECORD_FILE_NAME);
 
     try {
-        const text = fs.readFileSync(recordPath, { encoding: 'utf8', flag: 'r' }) || '{}';
+        const text = fs.readFileSync(recordPath, { encoding: FILE_ENCODING, flag: 'r' }) || '{}';
         return JSON.parse(text);
     } catch (err) {
         return {};
@@ -150,12 +151,12 @@ export function loadRecord(): {[key: string]: any} {
 }
 
 export function dumpRecord(record: {}) {
-    const recordPath = pathJoin(getBuildPath(), 'record');
+    const recordPath = pathJoin(getBuildPath(), RECORD_FILE_NAME);
 
     mkdirRecursive(recordPath);
     try {
         const text = JSON.stringify(record);
-        fs.writeFileSync(recordPath, text, { encoding: 'utf8', flag: 'w' });
+        fs.writeFileSync(recordPath, text, { encoding: FILE_ENCODING, flag: 'w' });
     } catch (err) {
         showWarning('编译记录保存失败。');
     }

@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
