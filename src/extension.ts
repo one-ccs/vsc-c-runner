@@ -263,7 +263,6 @@ async function buildTask() {
     if (!objs.length) {
         showWarning('未找到需要编译的文件, 请检查文件包含规则。');
         vscode.commands.executeCommand('workbench.action.openSettings', `${EXTENSION_NAME}.includes`);
-        return false;
     }
 
     // 链接文件并生成可执行文件
@@ -271,8 +270,8 @@ async function buildTask() {
     const relBinPath = getRelativePath(absBinPath);
 
     if (!needCompileFiles.length && isPathExists(absBinPath)) {
-        showInfo('无需编译');
-        return true;
+        isBuildAndRun ? runTask() : showInfo('无需编译');
+        return;
     }
 
     mkdirRecursive(absBinPath);
@@ -294,7 +293,7 @@ async function buildTask() {
 
     cmds.push(cmd);
 
-    return runVscodeTask('编译', cmds.join(' && '));
+    runVscodeTask('编译', cmds.join(' && '));
 }
 
 async function runTask() {
@@ -307,20 +306,17 @@ async function runTask() {
 
     if (!isPathExists(pathJoin(buildBinFolder, binName))) {
         showWarning('未找到可执行文件, 请先编译。');
-        return false;
     }
 
     const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName} ${runArgs.join(' ')}`;
 
-    return runVscodeTask('运行', cmd);
+    runVscodeTask('运行', cmd);
 }
 
 async function buildAndRunTask() {
     isBuildAndRun = true;
 
-    if (await buildTask()) {
-        runTask();
-    }
+    buildTask();
 }
 
 async function rebuildTask() {
