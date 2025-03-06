@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -126,7 +126,7 @@
           "default": "gcc"
         },
         "C_Project_Runner.compilerOptions": {
-          "description": "编译器选项",
+          "description": "编译选项, 编译时会附加到目标文件之前, 例: [\"-Wall\", \"-O3\"]",
           "scope": "resource",
           "type": "array",
           "items": {
@@ -136,6 +136,15 @@
             "-Wall",
             "-O3"
           ]
+        },
+        "C_Project_Runner.linkerOptions": {
+          "description": "链接选项, 链接时会附加到目标文件之后, 例: [\"-lws2_32\", \"-mwindows\"]",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": []
         },
         "C_Project_Runner.linkerLibs": {
           "description": "要链接的库, 例: [\"ws2_32\", \"sqlite3\"]",

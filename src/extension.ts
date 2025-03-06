@@ -216,6 +216,7 @@ async function buildTask() {
     const resCompilerPath = getConfig('resCompilerPath', 'windres') as string;
     const compilerPath    = getConfig('compilerPath', 'gcc') as string;
     const compilerOptions = getConfig('compilerOptions', []) as string[];
+    const linkerOptions   = getConfig('linkerOptions', []) as string[];
     const linkerLibs      = getConfig('linkerLibs', []) as string[];
     const linkerLibPaths  = getConfig('linkerLibPaths', []) as string[];
     const binName         = `${vscode.workspace.name}.exe`;
@@ -289,6 +290,10 @@ async function buildTask() {
     if (linkerLibs.length) {
         cmd += ' ';
         cmd += linkerLibs.map(lib => `-l${lib}`).join(' ');
+    }
+    if (linkerOptions.length) {
+        cmd += ' ';
+        cmd += linkerOptions.join(' ');
     }
 
     cmds.push(cmd);

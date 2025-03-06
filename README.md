@@ -1,4 +1,4 @@
-# VSC C Runner
+# C Project Runner
 
 编译并运行 C 工程项目，支持多文件编译，支持链接库文件，支持自动识别未更改文件，不会重复编译，提高开发效率。
 
@@ -66,3 +66,16 @@
    3. `C_Project_Runner.linkerLibPaths` 设置添加 "dll 文件所在目录"(如 "src/sqlite3") 选项。
    4. 拷贝 `sqlite3.dll` 到程序所在目录。
    5. 编译并运行程序，即可正常使用 sqlite3 库。
+
+
+### 为程序添加资源文件
+
+#### 可执行程序添加图标
+
+默认包含了源文件 `src/**/*.rc`，所以可以直接在 `src` 目录下添加 `logo.ico` 文件和 `resource.rc` 文件，并在 `resource.rc` 文件中添加以下内容：
+
+```
+logo ICON logo.ico
+```
+
+编译文件，此时生成的可执行文件图标为 `logo.ico`。
