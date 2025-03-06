@@ -66,9 +66,13 @@ export function activate(context: vscode.ExtensionContext) {
         return;
     }
 
-    vscode.tasks.onDidEndTask(e => {
+    vscode.tasks.onDidEndTaskProcess((e: vscode.TaskProcessEndEvent) => {
         if (e.execution.task.name === '编译') {
-            isBuildAndRun && runTask();
+            if (e.exitCode === 0) {
+                isBuildAndRun && runTask();
+            } else {
+                showWarning('编译失败');
+            }
         }
     });
 
@@ -275,7 +279,12 @@ async function buildTask() {
         return;
     }
 
-    mkdirRecursive(absBinPath);
+    if (isPathExists(pathJoin(buildBinFolder, binName))) {
+        rmdirRecursive(absBinPath);
+    }
+    else {
+        mkdirRecursive(absBinPath);
+    }
 
     let cmd = compilerPath;
 
@@ -311,6 +320,7 @@ async function runTask() {
 
     if (!isPathExists(pathJoin(buildBinFolder, binName))) {
         showWarning('未找到可执行文件, 请先编译。');
+        return;
     }
 
     const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName} ${runArgs.join(' ')}`;

@@ -120,7 +120,7 @@ export function mkdirRecursive(filepath: string) {
 
 /**
  * 递归删除文件或目录
- * @param dir 路径 (必须为绝对路径)
+ * @param path 路径 (必须为绝对路径)
  */
 export function rmdirRecursive(path: string) {
     try {
@@ -139,6 +139,10 @@ function getFileMd5(filePath: string): string {
     return md5;
 }
 
+/**
+ * 加载编译记录
+ * @returns 编译记录
+ */
 export function loadRecord(): {[key: string]: any} {
     const recordPath = pathJoin(getBuildPath(), RECORD_FILE_NAME);
 
@@ -150,6 +154,10 @@ export function loadRecord(): {[key: string]: any} {
     }
 }
 
+/**
+ * 保存编译记录
+ * @param record 编译记录
+ */
 export function dumpRecord(record: {}) {
     const recordPath = pathJoin(getBuildPath(), RECORD_FILE_NAME);
 
@@ -162,9 +170,13 @@ export function dumpRecord(record: {}) {
     }
 }
 
-export function withNeedCompile(filePaths: string[]): string[] {
-    const files: string[] = [];
-    // 读取编译记录
+/**
+ * 对比文件 MD5 值, 判断是否需要重新编译
+ * @param files 文件路径列表
+ * @returns 需要编译的文件路径列表
+ */
+export function withNeedCompile(files: string[]): string[] {
+    const _files: string[] = [];
     const record = loadRecord();
 
     if (!record.hasOwnProperty(BuildModes.debug)) {
@@ -175,17 +187,15 @@ export function withNeedCompile(filePaths: string[]): string[] {
     }
 
     // 若记录不存在, 或文件 md5 值不同, 则需要编译
-    for (const filePath of filePaths) {
+    for (const filePath of files) {
         const md5 = getFileMd5(filePath);
 
         if (record[buildMode][filePath] !== md5) {
-            files.push(filePath);
+            _files.push(filePath);
             record[buildMode][filePath] = md5;
         }
     }
-
-    // 更新编译记录
     dumpRecord(record);
 
-    return files;
+    return _files;
 }
