@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -85,10 +85,24 @@
       "type": "object",
       "title": "C Project Runner",
       "properties": {
-        "C_Project_Runner.showStatusBarButton": {
+        "C_Project_Runner.StatusBarButtonShown": {
           "description": "是否显示状态栏按钮",
           "type": "boolean",
           "default": true
+        },
+        "C_Project_Runner.StatusBarButtonAlign": {
+          "description": "状态栏按钮位置",
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "default": "left"
+        },
+        "C_Project_Runner.StatusBarButtonPriority": {
+          "description": "状态栏按钮优先级（值越高，越靠左侧显示）",
+          "type": "number",
+          "default": 50
         },
         "C_Project_Runner.includes": {
           "description": "包含源文件的 glob 规则",

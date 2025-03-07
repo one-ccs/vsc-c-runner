@@ -4,9 +4,8 @@ import * as vscode from 'vscode';
 import { extensionState } from '../extension';
 import {
     EXTENSION_NAME,
-    STATUS_BAR_ALIGN,
-    STATUS_BAR_PRIORITY,
 } from '../params/params';
+import { getConfig } from './configUtils';
 
 
 export function showInfo(msg: string): void {
@@ -27,8 +26,8 @@ export function setContextValue(key: string, value: any) {
 
 export function createStatusBarItem() {
     return vscode.window.createStatusBarItem(
-        STATUS_BAR_ALIGN,
-        STATUS_BAR_PRIORITY,
+        getConfig('StatusBarButtonAlign', 'left') === 'left' ? vscode.StatusBarAlignment.Left : vscode.StatusBarAlignment.Right,
+        getConfig('StatusBarButtonPriority', 50),
     );
 }
 

@@ -43,7 +43,7 @@ import { getConfig, getBuildPath } from './utils/configUtils';
 
 let record: {[key: string]: any} | null = null;
 let isBuildAndRun: boolean = false;
-let showStatusBarButton: boolean = !!getConfig('showStatusBarButton', true);
+let StatusBarButtonShown: boolean = !!getConfig('StatusBarButtonShown', true);
 
 let modeStatusBar: vscode.StatusBarItem | undefined;
 let buildStatusBar: vscode.StatusBarItem | undefined;
@@ -74,14 +74,24 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
-        if (e.affectsConfiguration(`${EXTENSION_NAME}.showStatusBarButton`)) {
-            showStatusBarButton = !!getConfig('showStatusBarButton', true);
+        if (e.affectsConfiguration(`${EXTENSION_NAME}.StatusBarButtonShown`)) {
+            StatusBarButtonShown = !!getConfig('StatusBarButtonShown', true);
 
-            updateModeStatus(modeStatusBar, showStatusBarButton, buildMode);
-            updateBuildStatus(buildStatusBar, showStatusBarButton);
-            updateRunStatus(runStatusBar, showStatusBarButton);
-            updateBuildAndRunStatus(buildAndRunStatusBar, showStatusBarButton);
-            updateRebuildStatus(rebuildStatusBar, showStatusBarButton);
+            updateModeStatus(modeStatusBar, StatusBarButtonShown, buildMode);
+            updateBuildStatus(buildStatusBar, StatusBarButtonShown);
+            updateRunStatus(runStatusBar, StatusBarButtonShown);
+            updateBuildAndRunStatus(buildAndRunStatusBar, StatusBarButtonShown);
+            updateRebuildStatus(rebuildStatusBar, StatusBarButtonShown);
+        }
+        if (
+            e.affectsConfiguration(`${EXTENSION_NAME}.StatusBarButtonAlign`) ||
+            e.affectsConfiguration(`${EXTENSION_NAME}.StatusBarButtonPriority`)
+        ) {
+            vscode.window.showInformationMessage('已修改状态栏样式，是否立即重启 VSCode 使样式生效？', '是', '否').then(async (result) => {
+                if (result === '是') {
+                    await vscode.commands.executeCommand('workbench.action.reloadWindow');
+                }
+            });
         }
     });
     vscode.tasks.onDidEndTaskProcess((e: vscode.TaskProcessEndEvent) => {
@@ -123,12 +133,13 @@ export function deactivate() {
 function initModeStatusBar() {
     if (modeStatusBar) return;
 
+    const commandName = `${EXTENSION_NAME}.selectMode`;
+
     modeStatusBar = createStatusBarItem();
     modeStatusBar.tooltip = '选择编译模式';
-    extensionContext?.subscriptions.push(modeStatusBar);
-    updateModeStatus(modeStatusBar, showStatusBarButton, buildMode);
+    modeStatusBar.command = commandName;
+    updateModeStatus(modeStatusBar, StatusBarButtonShown, buildMode);
 
-    const commandName = `${EXTENSION_NAME}.selectMode`;
     commandModeDisposable = vscode.commands.registerCommand(
         commandName,
         async () => {
@@ -137,24 +148,25 @@ function initModeStatusBar() {
             if (pickedMode) {
                 buildMode = pickedMode;
 
-                updateModeStatus(modeStatusBar, showStatusBarButton, buildMode);
+                updateModeStatus(modeStatusBar, StatusBarButtonShown, buildMode);
             }
         },
     );
 
-    modeStatusBar.command = commandName;
+    extensionContext?.subscriptions.push(modeStatusBar);
     extensionContext?.subscriptions.push(commandModeDisposable);
 }
 
 function initBuildStatusBar() {
     if (buildStatusBar) return;
 
+    const commandName = `${EXTENSION_NAME}.build`;
+
     buildStatusBar = createStatusBarItem();
     buildStatusBar.tooltip = '编译';
-    extensionContext?.subscriptions.push(buildStatusBar);
-    updateBuildStatus(buildStatusBar, showStatusBarButton);
+    buildStatusBar.command = commandName;
+    updateBuildStatus(buildStatusBar, StatusBarButtonShown);
 
-    const commandName = `${EXTENSION_NAME}.build`;
     commandBuildDisposable = vscode.commands.registerCommand(
         commandName,
         async () => {
@@ -162,19 +174,20 @@ function initBuildStatusBar() {
         },
     );
 
-    buildStatusBar.command = commandName;
+    extensionContext?.subscriptions.push(buildStatusBar);
     extensionContext?.subscriptions.push(commandBuildDisposable);
 }
 
 function initRunStatusBar() {
     if (runStatusBar) return;
 
+    const commandName = `${EXTENSION_NAME}.run`;
+
     runStatusBar = createStatusBarItem();
     runStatusBar.tooltip = '运行';
-    extensionContext?.subscriptions.push(runStatusBar);
-    updateRunStatus(runStatusBar, showStatusBarButton);
+    runStatusBar.command = commandName;
+    updateRunStatus(runStatusBar, StatusBarButtonShown);
 
-    const commandName = `${EXTENSION_NAME}.run`;
     commandRunDisposable = vscode.commands.registerCommand(
         commandName,
         async () => {
@@ -182,19 +195,20 @@ function initRunStatusBar() {
         }
     );
 
-    runStatusBar.command = commandName;
+    extensionContext?.subscriptions.push(runStatusBar);
     extensionContext?.subscriptions.push(commandRunDisposable);
 }
 
 function initBuildAndRunStatusBar() {
     if (buildAndRunStatusBar) return;
 
+    const commandName = `${EXTENSION_NAME}.buildAndRun`;
+
     buildAndRunStatusBar = createStatusBarItem();
     buildAndRunStatusBar.tooltip = '编译并运行';
-    extensionContext?.subscriptions.push(buildAndRunStatusBar);
-    updateBuildAndRunStatus(buildAndRunStatusBar, showStatusBarButton);
+    buildAndRunStatusBar.command = commandName;
+    updateBuildAndRunStatus(buildAndRunStatusBar, StatusBarButtonShown);
 
-    const commandName = `${EXTENSION_NAME}.buildAndRun`;
     commandBuildAndRunDisposable = vscode.commands.registerCommand(
         commandName,
         async () => {
@@ -202,19 +216,20 @@ function initBuildAndRunStatusBar() {
         }
     );
 
-    buildAndRunStatusBar.command = commandName;
+    extensionContext?.subscriptions.push(buildAndRunStatusBar);
     extensionContext?.subscriptions.push(commandBuildAndRunDisposable);
 }
 
 function initRebuildStatusBar() {
     if (rebuildStatusBar) return;
 
+    const commandName = `${EXTENSION_NAME}.rebuild`;
+
     rebuildStatusBar = createStatusBarItem();
     rebuildStatusBar.tooltip = '重新生成';
-    extensionContext?.subscriptions.push(rebuildStatusBar);
-    updateRebuildStatus(rebuildStatusBar, showStatusBarButton);
+    rebuildStatusBar.command = commandName;
+    updateRebuildStatus(rebuildStatusBar, StatusBarButtonShown);
 
-    const commandName = `${EXTENSION_NAME}.rebuild`;
     commandRebuildDisposable = vscode.commands.registerCommand(
         commandName,
         async () => {
@@ -226,7 +241,7 @@ function initRebuildStatusBar() {
         }
     );
 
-    rebuildStatusBar.command = commandName;
+    extensionContext?.subscriptions.push(rebuildStatusBar);
     extensionContext?.subscriptions.push(commandRebuildDisposable);
 }
 
