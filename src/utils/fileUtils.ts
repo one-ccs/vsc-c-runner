@@ -3,12 +3,58 @@ import * as path from 'path';
 import * as crypto from 'crypto';
 import * as vscode from 'vscode';
 
-import { getConfig } from './configUtils';
+import { getConfigIds, getBuildPath } from './configUtils';
 import { showWarning } from './vscodeUtils';
 import { BuildModes } from '../types/enums';
 import { buildMode } from '../extension';
-import { FILE_ENCODING, RECORD_FILE_NAME } from '../params/params';
+import { EXT_RESOURCE, EXT_SOURCE, FILE_ENCODING, RECORD_FILE_NAME } from '../params/params';
+import { deepCopy } from './copyUtil';
 
+
+/**
+ * 计算数据的 md5 值
+ * @param data 数据
+ * @returns md5
+ */
+export function md5(data: crypto.BinaryLike): string {
+    return crypto.createHash('md5').update(data).digest('hex');
+}
+
+/**
+ * 判断是否为源文件
+ * @param path 文件路径
+ * @returns bool
+ */
+export function isSourceFile(path: string) {
+    return EXT_SOURCE.some(ext => path.endsWith(ext));
+}
+
+/**
+ * 判断是否为资源文件
+ * @param path 文件路径
+ * @returns bool
+ */
+export function isResourceFile(path: string) {
+    return EXT_RESOURCE.some(ext => path.endsWith(ext));
+}
+
+/**
+ * 修改文件路径中的扩展名
+ * @param path 文件路径
+ * @param ext 扩展名（不含 "."）
+ * @returns 修改后的路径
+ */
+export function changeExt(path: string, ext: string) {
+    const parts = path.split('.');
+
+    if (parts.length > 1) {
+        parts[parts.length - 1] = ext;
+    } else {
+        parts.push(ext);
+    }
+
+    return parts.join('.');
+}
 
 /**
  * 获取匹配的文件列表（基于项目根目录的相对路径）
@@ -48,10 +94,6 @@ export async function getFiles(includes: string[], excludes: string[]): Promise<
     return files;
 }
 
-export function getBuildPath() {
-    return getAbsolutePath(getConfig('buildPath', '.build'));
-}
-
 /**
  * 将所有路径相加计算绝对路径 (第一个路径固定为工作区路径)
  * @param paths 路径列表
@@ -86,6 +128,11 @@ export function getDirname(filepath: string) {
     }
 }
 
+/**
+ * 路径拼接
+ * @param args 路径列表
+ * @returns 拼接后的路径
+ */
 export function pathJoin(...args: string[]) {
     return path.join(...args).replaceAll('\\', '/');
 }
@@ -115,7 +162,9 @@ export function mkdirRecursive(filepath: string) {
         if (dirname && !isPathExists(dirname)) {
             fs.mkdirSync(dirname, { recursive: true });
         }
-    } catch (err) {}
+    } catch (err) {
+        console.warn('创建目录失败: ', err);
+    }
 }
 
 /**
@@ -125,7 +174,9 @@ export function mkdirRecursive(filepath: string) {
 export function rmdirRecursive(path: string) {
     try {
         fs.rmSync(path, { recursive: true });
-    } catch (err) {}
+    } catch (err) {
+        console.warn('删除文件或目录失败: ', err);
+    }
 }
 
 /**
@@ -135,8 +186,7 @@ export function rmdirRecursive(path: string) {
  */
 function getFileMd5(filePath: string): string {
     const buffer = fs.readFileSync(getAbsolutePath(filePath), { encoding: FILE_ENCODING, flag: 'r' }).trim();
-    const md5 = crypto.createHash('md5').update(buffer).digest('hex');
-    return md5;
+    return md5(buffer);
 }
 
 /**
@@ -171,31 +221,41 @@ export function dumpRecord(record: {}) {
 }
 
 /**
- * 对比文件 MD5 值, 判断是否需要重新编译
+ * 分析文件是否需要重新编译，同时修改记录
  * @param files 文件路径列表
- * @returns 需要编译的文件路径列表
+ * @returns 分析结果
  */
-export function withNeedCompile(files: string[]): string[] {
-    const _files: string[] = [];
-    const record = loadRecord();
+export function analysisFiles(files: string[], record: {[key: string]: any}): {
+    diffFiles: string[],
+    rebuild: boolean,
+    rebuildRes: boolean,
+    relink: boolean,
+} {
+    if (!record.hasOwnProperty(BuildModes.debug)) record[BuildModes.debug] = {};
+    if (!record.hasOwnProperty(BuildModes.release)) record[BuildModes.release] = {};
 
-    if (!record.hasOwnProperty(BuildModes.debug)) {
-        record[BuildModes.debug] = {};
+    const oldRecord = deepCopy(record);
+    const diffFiles: string[] = [];
+
+    record[buildMode] = {
+        ...getConfigIds(),
+    };
+    // 若记录不存在, 或文件 md5 值不同，或编译配置变化, 则需要编译
+    for (const file of files) {
+        const md5 = getFileMd5(file);
+
+        record[buildMode][file] = md5;
+        if (oldRecord[buildMode][file] !== md5) diffFiles.push(file);
     }
-    if (!record.hasOwnProperty(BuildModes.release)) {
-        record[BuildModes.release] = {};
+
+    // 添加文件（已在编译列表，会自动链接），减少文件需要强制重新链接
+    const oldFiles = Object.keys(oldRecord[buildMode]).filter(key => !key.startsWith('__'));
+    const newFiles = Object.keys(record[buildMode]).filter(key => !key.startsWith('__'));
+
+    return {
+        diffFiles,
+        rebuild: (oldRecord[buildMode]['__buildId'] != record[buildMode]['__buildId']),
+        rebuildRes: (oldRecord[buildMode]['__buildResId'] != record[buildMode]['__buildResId']),
+        relink: (oldRecord[buildMode]['__linkId'] != record[buildMode]['__linkId']) || (oldFiles.length !== newFiles.length),
     }
-
-    // 若记录不存在, 或文件 md5 值不同, 则需要编译
-    for (const filePath of files) {
-        const md5 = getFileMd5(filePath);
-
-        if (record[buildMode][filePath] !== md5) {
-            _files.push(filePath);
-            record[buildMode][filePath] = md5;
-        }
-    }
-    dumpRecord(record);
-
-    return _files;
 }

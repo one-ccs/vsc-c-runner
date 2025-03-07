@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -85,6 +85,11 @@
       "type": "object",
       "title": "C Project Runner",
       "properties": {
+        "C_Project_Runner.showStatusBarButton": {
+          "description": "是否显示状态栏按钮",
+          "type": "boolean",
+          "default": true
+        },
         "C_Project_Runner.includes": {
           "description": "包含源文件的 glob 规则",
           "scope": "resource",
@@ -156,7 +161,7 @@
           "default": []
         },
         "C_Project_Runner.linkerLibPaths": {
-          "description": "链接库文件路径 (注: 链接库请自行拷贝到程序所在目录), 例: [\"src/sqlite3\"]",
+          "description": "链接库文件路径 (注: 链接库需要拷贝到可执行文件所在目录), 例: [\"src/sqlite3\"]",
           "scope": "resource",
           "type": "array",
           "items": {

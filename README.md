@@ -47,7 +47,7 @@
 - [compilerPath](vscode://settings/C_Project_Runner.compilerPath) 编译器路径
 - [compilerOptions](vscode://settings/C_Project_Runner.compilerOptions) 编译器选项
 - [linkerLibs](vscode://settings/C_Project_Runner.linkerLibs) 要链接的库, 例: ["ws2_32", "sqlite3"]
-- [linkerLibPaths](vscode://settings/C_Project_Runner.linkerLibPaths) 链接库文件路径 (注: 链接库请自行拷贝到程序所在目录), 例: ["src/sqlite3"]
+- [linkerLibPaths](vscode://settings/C_Project_Runner.linkerLibPaths) 链接库文件路径 (注: 链接库需要拷贝到可执行文件所在目录), 例: ["src/sqlite3"]
 - [runArgs](vscode://settings/C_Project_Runner.runArgs) 运行参数
 
 ## 补充说明
@@ -64,13 +64,13 @@
    1. 项目中正常 "#include" `sqlite3.h`、`sqlite3ext.h` 两个头文件。
    2. `C_Project_Runner.linkerLibs` 设置添加 "sqlite3" 选项。
    3. `C_Project_Runner.linkerLibPaths` 设置添加 "dll 文件所在目录"(如 "src/sqlite3") 选项。
-   4. 拷贝 `sqlite3.dll` 到程序所在目录。
+   4. 拷贝 `sqlite3.dll` 到可执行文件所在目录。
    5. 编译并运行程序，即可正常使用 sqlite3 库。
 
 
 ### 为程序添加资源文件
 
-#### 可执行程序添加图标
+#### 可执行文件添加图标
 
 默认包含了源文件 `src/**/*.rc`，所以可以直接在 `src` 目录下添加 `logo.ico` 文件和 `resource.rc` 文件，并在 `resource.rc` 文件中添加以下内容：
 

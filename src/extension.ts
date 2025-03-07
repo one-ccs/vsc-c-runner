@@ -24,19 +24,26 @@ import {
     showWarning,
 } from './utils/vscodeUtils';
 import {
-    getBuildPath,
+    isSourceFile,
+    isResourceFile,
     getFiles,
     mkdirRecursive,
     pathJoin,
     rmdirRecursive,
     getRelativePath,
-    withNeedCompile,
+    loadRecord,
+    dumpRecord,
+    analysisFiles,
     isPathExists,
+    changeExt,
+    getAbsolutePath,
 } from './utils/fileUtils';
-import { getConfig } from './utils/configUtils';
+import { getConfig, getBuildPath } from './utils/configUtils';
 
+
+let record: {[key: string]: any} | null = null;
 let isBuildAndRun: boolean = false;
-let showStatusBarItems: boolean = true;
+let showStatusBarButton: boolean = !!getConfig('showStatusBarButton', true);
 
 let modeStatusBar: vscode.StatusBarItem | undefined;
 let buildStatusBar: vscode.StatusBarItem | undefined;
@@ -66,12 +73,24 @@ export function activate(context: vscode.ExtensionContext) {
         return;
     }
 
+    vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
+        if (e.affectsConfiguration(`${EXTENSION_NAME}.showStatusBarButton`)) {
+            showStatusBarButton = !!getConfig('showStatusBarButton', true);
+
+            updateModeStatus(modeStatusBar, showStatusBarButton, buildMode);
+            updateBuildStatus(buildStatusBar, showStatusBarButton);
+            updateRunStatus(runStatusBar, showStatusBarButton);
+            updateBuildAndRunStatus(buildAndRunStatusBar, showStatusBarButton);
+            updateRebuildStatus(rebuildStatusBar, showStatusBarButton);
+        }
+    });
     vscode.tasks.onDidEndTaskProcess((e: vscode.TaskProcessEndEvent) => {
         if (e.execution.task.name === '编译') {
             if (e.exitCode === 0) {
+                if (record) dumpRecord(record);
                 isBuildAndRun && runTask();
             } else {
-                showWarning('编译失败');
+                isBuildAndRun ? showWarning('编译失败，终止运行！') : showWarning('编译失败！');
             }
         }
     });
@@ -107,7 +126,7 @@ function initModeStatusBar() {
     modeStatusBar = createStatusBarItem();
     modeStatusBar.tooltip = '选择编译模式';
     extensionContext?.subscriptions.push(modeStatusBar);
-    updateModeStatus(modeStatusBar, showStatusBarItems, buildMode);
+    updateModeStatus(modeStatusBar, showStatusBarButton, buildMode);
 
     const commandName = `${EXTENSION_NAME}.selectMode`;
     commandModeDisposable = vscode.commands.registerCommand(
@@ -118,7 +137,7 @@ function initModeStatusBar() {
             if (pickedMode) {
                 buildMode = pickedMode;
 
-                updateModeStatus(modeStatusBar, showStatusBarItems, buildMode);
+                updateModeStatus(modeStatusBar, showStatusBarButton, buildMode);
             }
         },
     );
@@ -133,7 +152,7 @@ function initBuildStatusBar() {
     buildStatusBar = createStatusBarItem();
     buildStatusBar.tooltip = '编译';
     extensionContext?.subscriptions.push(buildStatusBar);
-    updateBuildStatus(buildStatusBar, showStatusBarItems);
+    updateBuildStatus(buildStatusBar, showStatusBarButton);
 
     const commandName = `${EXTENSION_NAME}.build`;
     commandBuildDisposable = vscode.commands.registerCommand(
@@ -153,7 +172,7 @@ function initRunStatusBar() {
     runStatusBar = createStatusBarItem();
     runStatusBar.tooltip = '运行';
     extensionContext?.subscriptions.push(runStatusBar);
-    updateRunStatus(runStatusBar, showStatusBarItems);
+    updateRunStatus(runStatusBar, showStatusBarButton);
 
     const commandName = `${EXTENSION_NAME}.run`;
     commandRunDisposable = vscode.commands.registerCommand(
@@ -173,7 +192,7 @@ function initBuildAndRunStatusBar() {
     buildAndRunStatusBar = createStatusBarItem();
     buildAndRunStatusBar.tooltip = '编译并运行';
     extensionContext?.subscriptions.push(buildAndRunStatusBar);
-    updateBuildAndRunStatus(buildAndRunStatusBar, showStatusBarItems);
+    updateBuildAndRunStatus(buildAndRunStatusBar, showStatusBarButton);
 
     const commandName = `${EXTENSION_NAME}.buildAndRun`;
     commandBuildAndRunDisposable = vscode.commands.registerCommand(
@@ -193,7 +212,7 @@ function initRebuildStatusBar() {
     rebuildStatusBar = createStatusBarItem();
     rebuildStatusBar.tooltip = '重新生成';
     extensionContext?.subscriptions.push(rebuildStatusBar);
-    updateRebuildStatus(rebuildStatusBar, showStatusBarItems);
+    updateRebuildStatus(rebuildStatusBar, showStatusBarButton);
 
     const commandName = `${EXTENSION_NAME}.rebuild`;
     commandRebuildDisposable = vscode.commands.registerCommand(
@@ -212,6 +231,7 @@ function initRebuildStatusBar() {
 }
 
 async function buildTask() {
+    record                = loadRecord();
     const includes        = getConfig('includes', []) as string[];
     const excludes        = getConfig('excludes', []) as string[];
     const buildPath       = getBuildPath();
@@ -224,74 +244,64 @@ async function buildTask() {
     const linkerLibs      = getConfig('linkerLibs', []) as string[];
     const linkerLibPaths  = getConfig('linkerLibPaths', []) as string[];
     const binName         = `${vscode.workspace.name}.exe`;
+    const absBinPath      = pathJoin(buildBinFolder, binName);
+    const relBinPath      = getRelativePath(absBinPath);
+    const isBinFileExists = isPathExists(absBinPath);
+    const files           = await getFiles(includes, excludes);
+    const { diffFiles, rebuild, rebuildRes, relink } = analysisFiles(files, record);
+    const cmds            = [];  // 编译命令列表
+    const objs            = [];  // 目标文件列表
 
-    const cmds = [];
-    const objs = [];
-    const files = await getFiles(includes, excludes);
-    const needCompileFiles = withNeedCompile(files);
-
+    // 构建编译命令
     for (const file of files) {
-        // 创建目录
-        mkdirRecursive(pathJoin(buildObjFolder, file));
+        // 源文件
+        if (isSourceFile(file)) {
+            mkdirRecursive(pathJoin(buildObjFolder, file));
 
-        // 编译源文件
-        if (file.endsWith('.c')) {
-            const objPath = getRelativePath(pathJoin(buildObjFolder, file.replace('.c', '.o')));
-            let cmd = compilerPath;
+            const absOjbPath = pathJoin(buildObjFolder, changeExt(file, 'o'));
+            const relObjPath = getRelativePath(absOjbPath);
 
-            cmd += ' ';
-            cmd += compilerOptions.join(' ');
-            cmd += ' ';
-            cmd += (buildMode === BuildModes.debug ? '-g' : '');
-            cmd += ' ';
-            cmd += `-c ${file}`;
-            cmd += ' ';
-            cmd += `-o ${(objPath)}`;
-
-            needCompileFiles.includes(file) && cmds.push(cmd);
-            objs.push(objPath);
+            objs.push(relObjPath);
+            if (rebuild || diffFiles.includes(file) || !isPathExists(absOjbPath)) {
+                const cmd = `${compilerPath} ${compilerOptions.join(' ')} ${buildMode === BuildModes.debug ? '-g' : ''} -c ${file} -o ${relObjPath}`;
+                cmds.push(cmd);
+            }
         }
-        // 编译资源文件
-        if (file.endsWith('.rc')) {
-            const resPath = getRelativePath(pathJoin(buildObjFolder, file.replace('.rc', '.res')));
-            let cmd = resCompilerPath;
+        // 资源文件
+        if (isResourceFile(file)) {
+            mkdirRecursive(pathJoin(buildObjFolder, file));
 
-            cmd += ' -J rc -O coff ';
-            cmd += `-i ${file}`;
-            cmd += ' ';
-            cmd += `-o ${resPath}`;
+            const absResPath = pathJoin(buildObjFolder, changeExt(file, 'res'));
+            const relResPath = getRelativePath(absResPath);
 
-            needCompileFiles.includes(file) && cmds.push(cmd);
-            objs.push(resPath);
+            objs.push(relResPath);
+            if (rebuildRes || diffFiles.includes(file) || !isPathExists(absResPath)) {
+                const cmd = `${resCompilerPath} -J rc -O coff -i ${file} -o ${relResPath}`;
+
+                cmds.push(cmd);
+            }
         }
     }
     if (!objs.length) {
-        showWarning('未找到需要编译的文件, 请检查文件包含规则。');
+        showWarning('未找到需要编译的文件, 请检查文件包含规则！');
         vscode.commands.executeCommand('workbench.action.openSettings', `${EXTENSION_NAME}.includes`);
+        return;
     }
-
-    // 链接文件并生成可执行文件
-    const absBinPath = pathJoin(buildBinFolder, binName);
-    const relBinPath = getRelativePath(absBinPath);
-
-    if (!needCompileFiles.length && isPathExists(absBinPath)) {
-        isBuildAndRun ? runTask() : showInfo('无需编译');
+    if (!cmds.length && !relink && isBinFileExists) {
+        isBuildAndRun ? runTask() : showInfo('无需编译。');
         return;
     }
 
-    if (isPathExists(pathJoin(buildBinFolder, binName))) {
+    // 删除可执行文件
+    if (isBinFileExists) {
         rmdirRecursive(absBinPath);
-    }
-    else {
+    } else {
         mkdirRecursive(absBinPath);
     }
 
-    let cmd = compilerPath;
+    // 构建链接命令
+    let cmd = `${compilerPath} -o ${relBinPath} ${objs.join(' ')}`;
 
-    cmd += ' ';
-    cmd += `-o ${relBinPath}`;
-    cmd += ' ';
-    cmd += objs.join(' ');
     if (linkerLibPaths.length) {
         cmd += ' ';
         cmd += linkerLibPaths.map(path => `-L${path}`).join(' ');
@@ -319,7 +329,7 @@ async function runTask() {
     const binName        = `${vscode.workspace.name}.exe`;
 
     if (!isPathExists(pathJoin(buildBinFolder, binName))) {
-        showWarning('未找到可执行文件, 请先编译。');
+        showWarning('未找到可执行文件, 请先编译！');
         return;
     }
 
