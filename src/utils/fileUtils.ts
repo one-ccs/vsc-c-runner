@@ -180,6 +180,36 @@ export function rmdirRecursive(path: string) {
 }
 
 /**
+ * 复制源目录的所有文件或目录到目标目录
+ * @param src 源目录
+ * @param dest 目标目录
+ * @param err_msg 失败消息
+ */
+export function copyDir(src: string, dest: string, err_msg: string | null = null) {
+    try {
+        if (!isPathExists(src)) return;
+        fs.mkdirSync(dest, { recursive: true });
+        const files = fs.readdirSync(src, { withFileTypes: true });
+
+        for (const file of files) {
+            const srcPath = path.join(src, file.name);
+            const destPath = path.join(dest, file.name);
+
+            if (file.isDirectory()) {
+                copyDir(srcPath, destPath);
+            } else {
+                if (isPathExists(destPath)) continue;
+                fs.copyFileSync(srcPath, destPath);
+            }
+        }
+    } catch (err) {
+        err_msg && showWarning(err_msg);
+        console.warn('复制目录失败: ', err);
+    }
+}
+
+
+/**
  * 计算文件 md5 值
  * @param filePath 文件路径
  * @returns md5

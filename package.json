@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -103,6 +103,17 @@
           "description": "状态栏按钮优先级（值越高，越靠左侧显示）",
           "type": "number",
           "default": 50
+        },
+        "C_Project_Runner.publics": {
+          "description": "公共目录列表（原样拷贝该目录列表中的所有文件或目录到可执行文件所在目录）",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "public"
+          ]
         },
         "C_Project_Runner.includes": {
           "description": "包含源文件的 glob 规则",
