@@ -98,6 +98,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.tasks.onDidEndTaskProcess((e: vscode.TaskProcessEndEvent) => {
         if (e.execution.task.name === '编译') {
             if (e.exitCode === 0) {
+                const publics        = getConfig('publics', []) as string[];
+                const buildPath      = getBuildPath();
+                const buildBinFolder = pathJoin(buildPath, buildMode, 'bin');
+
+                // 拷贝公共文件
+                for (const _public of publics) {
+                    copyDir(getAbsolutePath(_public), buildBinFolder, '拷贝公共文件失败！');
+                }
                 if (record) dumpRecord(record);
                 isBuildAndRun && runTask();
             } else {
@@ -339,7 +347,6 @@ async function buildTask() {
 async function runTask() {
     isBuildAndRun = false;
 
-    const publics        = getConfig('publics', []) as string[];
     const buildPath      = getBuildPath();
     const buildBinFolder = pathJoin(buildPath, buildMode, 'bin');
     const runArgs        = getConfig('runArgs', []) as string[];
@@ -348,10 +355,6 @@ async function runTask() {
     if (!isPathExists(pathJoin(buildBinFolder, binName))) {
         showWarning('未找到可执行文件, 请先编译！');
         return;
-    }
-    // 拷贝公共文件
-    for (const _public of publics) {
-        copyDir(getAbsolutePath(_public), buildBinFolder, '拷贝公共文件失败！');
     }
 
     const cmd = `cd /d ${getRelativePath(buildBinFolder)} && start ${binName} ${runArgs.join(' ')}`;
