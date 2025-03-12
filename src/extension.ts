@@ -255,6 +255,8 @@ function initRebuildStatusBar() {
 }
 
 async function buildTask() {
+    // 触发工作区保存
+    await vscode.commands.executeCommand('workbench.action.files.saveAll');
     record                = loadRecord();
     const includes        = getConfig('includes', []) as string[];
     const excludes        = getConfig('excludes', []) as string[];
