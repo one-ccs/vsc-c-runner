@@ -127,7 +127,6 @@ export function activate(context: vscode.ExtensionContext) {
     setContextValue(`${EXTENSION_NAME}:activatedExtension`, true);
     updateActivationState(true);
 
-    initChangeEncoding();
     initModeStatusBar();
     initBuildStatusBar();
     initRunStatusBar();
@@ -139,7 +138,6 @@ export function deactivate() {
     setContextValue(`${EXTENSION_NAME}:activatedExtension`, false);
     updateActivationState(false);
 
-    disposeItem(commandChangeEncodingDisposable);
     disposeItem(commandModeDisposable);
     disposeItem(commandBuildDisposable);
     disposeItem(commandRunDisposable);
@@ -160,7 +158,7 @@ function initChangeEncoding() {
             const files         = await getFiles(includes, excludes);
 
             if (!files.length) {
-                return showWarning('未找到源文件，请检查配置项 includes 和 excludes');
+                return showWarning('未找到待转换编码文件，请检查配置项 "includes" 和 "excludes"。');
             }
             const targetMode  = await vscode.window.showQuickPick(CHANGE_ENCODING_MODE_ITEMS, {
                 title: '批量转换文件编码 (1/4)',
@@ -436,3 +434,6 @@ async function rebuildTask() {
 
     buildAndRunTask();
 }
+
+
+initChangeEncoding();
