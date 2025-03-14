@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -19,7 +19,9 @@
     "run",
     "compile",
     "build",
-    "debug"
+    "debug",
+    "encoding",
+    "transcoding"
   ],
   "repository": {
     "type": "git",
@@ -42,6 +44,11 @@
       }
     ],
     "commands": [
+      {
+        "command": "C_Project_Runner.changeEncoding",
+        "title": "批量转换文件编码",
+        "category": "C Project Runner"
+      },
       {
         "command": "C_Project_Runner.selectMode",
         "title": "选择编译模式",
@@ -74,12 +81,12 @@
       }
     ],
     "keybindings": [
-        {
-            "command": "C_Project_Runner.buildAndRun",
-            "key": "ctrl+f5",
-            "mac": "ctrl+f5",
-            "when": "C_Project_Runner:activatedExtension"
-        }
+      {
+        "command": "C_Project_Runner.buildAndRun",
+        "key": "ctrl+f5",
+        "mac": "ctrl+f5",
+        "when": "C_Project_Runner:activatedExtension"
+      }
     ],
     "configuration": {
       "type": "object",
@@ -214,14 +221,18 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
     "@types/mocha": "^10.0.7",
     "@types/node": "20.x",
+    "@types/vscode": "^1.95.0",
     "@typescript-eslint/eslint-plugin": "^8.3.0",
     "@typescript-eslint/parser": "^8.3.0",
-    "eslint": "^9.9.1",
-    "typescript": "^5.5.4",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.9.1",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "chardet": "^2.1.0",
+    "iconv-lite": "^0.6.3"
   }
 }

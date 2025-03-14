@@ -1,12 +1,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
+import * as chardet from 'chardet';
+import * as iconv from 'iconv-lite';
 import * as vscode from 'vscode';
 
 import { getConfigIds, getBuildPath } from './configUtils';
-import { showWarning } from './vscodeUtils';
 import { BuildModes } from '../types/enums';
-import { buildMode } from '../extension';
+import { buildMode, outputChannel } from '../extension';
 import { EXT_RESOURCE, EXT_SOURCE, FILE_ENCODING, RECORD_FILE_NAME } from '../params/params';
 import { deepCopy } from './copyUtil';
 
@@ -36,6 +37,34 @@ export function isSourceFile(path: string) {
  */
 export function isResourceFile(path: string) {
     return EXT_RESOURCE.some(ext => path.endsWith(ext));
+}
+
+/**
+ * 转换文件编码
+ * @param filePath 文件路径
+ * @param targetEncoding 目标编码
+ * @param originEncoding 原始编码
+ */
+export async function transcodingFile(filePath: string, targetEncoding: string, originEncoding?: string) {
+    if (!isPathExists(filePath)) return;
+
+    originEncoding = originEncoding || await chardet.detectFile(filePath) as string;
+
+    if (!originEncoding) return outputChannel?.appendLine(`转换文件编码失败，无法识别文件编码: "${filePath}"`);
+    if (originEncoding.replace('-', '').toLowerCase() === targetEncoding.replace('-', '').toLowerCase()) return;
+
+    try {
+        const uri = vscode.Uri.file(filePath);
+        const originBuffer = Buffer.from(await vscode.workspace.fs.readFile(uri));
+        const originString = iconv.decode(originBuffer, originEncoding);
+        const targetBuffer = iconv.encode(originString, targetEncoding);
+
+        await vscode.workspace.fs.writeFile(uri, targetBuffer);
+
+        outputChannel?.appendLine(`转换文件编码成功: "${filePath}" "${originEncoding}" -> "${targetEncoding}"`);
+    } catch (err) {
+        outputChannel?.appendLine(`转换文件编码成功: "${filePath}" "${originEncoding}" -> "${targetEncoding}"`);
+    }
 }
 
 /**
@@ -163,6 +192,7 @@ export function mkdirRecursive(filepath: string) {
             fs.mkdirSync(dirname, { recursive: true });
         }
     } catch (err) {
+        outputChannel?.appendLine(`创建目录失败: ${filepath}`);
         console.warn('创建目录失败: ', err);
     }
 }
@@ -175,37 +205,41 @@ export function rmdirRecursive(path: string) {
     try {
         fs.rmSync(path, { recursive: true });
     } catch (err) {
+        outputChannel?.appendLine(`删除文件或目录失败: ${path}`);
         console.warn('删除文件或目录失败: ', err);
     }
 }
 
 /**
  * 复制源目录的所有文件或目录到目标目录
- * @param src 源目录
- * @param dest 目标目录
- * @param err_msg 失败消息
+ * @param srcDir 源目录
+ * @param destDir 目标目录
+ * @returns 是否成功
  */
-export function copyDir(src: string, dest: string, err_msg: string | null = null) {
+export function copyDir(srcDir: string, destDir: string): boolean {
     try {
-        if (!isPathExists(src)) return;
-        fs.mkdirSync(dest, { recursive: true });
-        const files = fs.readdirSync(src, { withFileTypes: true });
+        if (!isPathExists(srcDir)) return false;
+        fs.mkdirSync(destDir, { recursive: true });
+        const files = fs.readdirSync(srcDir, { withFileTypes: true });
 
         for (const file of files) {
-            const srcPath = path.join(src, file.name);
-            const destPath = path.join(dest, file.name);
+            const srcPath = path.join(srcDir, file.name);
+            const destPath = path.join(destDir, file.name);
 
             if (file.isDirectory()) {
                 copyDir(srcPath, destPath);
             } else {
                 if (isPathExists(destPath)) continue;
                 fs.copyFileSync(srcPath, destPath);
+                outputChannel?.appendLine(`复制文件: ${srcPath} -> ${destPath}`);
             }
         }
     } catch (err) {
-        err_msg && showWarning(err_msg);
+        outputChannel?.appendLine(`复制目录失败: ${srcDir} -> ${destDir}`);
         console.warn('复制目录失败: ', err);
+        return false;
     }
+    return true;
 }
 
 
@@ -246,7 +280,7 @@ export function dumpRecord(record: {}) {
         const text = JSON.stringify(record);
         fs.writeFileSync(recordPath, text, { encoding: FILE_ENCODING, flag: 'w' });
     } catch (err) {
-        showWarning('编译记录保存失败。');
+        outputChannel?.appendLine('编译记录保存失败。');
     }
 }
 

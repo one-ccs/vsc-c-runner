@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 
 import {
+    CHANGE_ENCODING_MODE_ITEMS,
     EXTENSION_NAME,
+    VSCODE_ENCODING_ITEMS,
 } from './params/params';
 import {
     BuildModes,
@@ -38,6 +40,7 @@ import {
     changeExt,
     getAbsolutePath,
     copyDir,
+    transcodingFile,
 } from './utils/fileUtils';
 import { getConfig, getBuildPath } from './utils/configUtils';
 
@@ -52,12 +55,14 @@ let runStatusBar: vscode.StatusBarItem | undefined;
 let buildAndRunStatusBar: vscode.StatusBarItem | undefined;
 let rebuildStatusBar: vscode.StatusBarItem | undefined;
 
+let commandChangeEncodingDisposable: vscode.Disposable | undefined;
 let commandModeDisposable: vscode.Disposable | undefined;
 let commandBuildDisposable: vscode.Disposable | undefined;
 let commandRunDisposable: vscode.Disposable | undefined;
 let commandBuildAndRunDisposable: vscode.Disposable | undefined;
 let commandRebuildDisposable: vscode.Disposable | undefined;
 
+export let outputChannel: vscode.OutputChannel | undefined;
 export let extensionContext: vscode.ExtensionContext | undefined;
 export let extensionState: vscode.Memento | undefined;
 export let extensionPath: string | undefined;
@@ -73,6 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
     ) {
         return;
     }
+    outputChannel = vscode.window.createOutputChannel(EXTENSION_NAME);
 
     vscode.workspace.onDidChangeConfiguration((e: vscode.ConfigurationChangeEvent) => {
         if (e.affectsConfiguration(`${EXTENSION_NAME}.StatusBarButtonShown`)) {
@@ -104,7 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                 // 拷贝公共文件
                 for (const _public of publics) {
-                    copyDir(getAbsolutePath(_public), buildBinFolder, '拷贝公共文件失败！');
+                    if (!copyDir(getAbsolutePath(_public), buildBinFolder)) showWarning('拷贝公共文件失败！');
                 }
                 if (record) dumpRecord(record);
                 isBuildAndRun && runTask();
@@ -121,6 +127,7 @@ export function activate(context: vscode.ExtensionContext) {
     setContextValue(`${EXTENSION_NAME}:activatedExtension`, true);
     updateActivationState(true);
 
+    initChangeEncoding();
     initModeStatusBar();
     initBuildStatusBar();
     initRunStatusBar();
@@ -132,11 +139,63 @@ export function deactivate() {
     setContextValue(`${EXTENSION_NAME}:activatedExtension`, false);
     updateActivationState(false);
 
+    disposeItem(commandChangeEncodingDisposable);
     disposeItem(commandModeDisposable);
     disposeItem(commandBuildDisposable);
     disposeItem(commandRunDisposable);
     disposeItem(commandBuildAndRunDisposable);
     disposeItem(commandRebuildDisposable);
+}
+
+function initChangeEncoding() {
+    if (commandChangeEncodingDisposable) return;
+
+    const commandName   = `${EXTENSION_NAME}.changeEncoding`;
+
+    commandChangeEncodingDisposable = vscode.commands.registerCommand(
+        commandName,
+        async () => {
+            const includes      = getConfig('includes', []) as string[];
+            const excludes      = getConfig('excludes', []) as string[];
+            const files         = await getFiles(includes, excludes);
+
+            if (!files.length) {
+                return showWarning('未找到源文件，请检查配置项 includes 和 excludes');
+            }
+            const targetMode  = await vscode.window.showQuickPick(CHANGE_ENCODING_MODE_ITEMS, {
+                title: '批量转换文件编码 (1/4)',
+                placeHolder: '请选择转换模式',
+            });
+            if (!targetMode) return;
+
+            const originEncoding = (targetMode.value === 'given'
+                ? await vscode.window.showQuickPick(VSCODE_ENCODING_ITEMS, {
+                    title: '批量转换文件编码 (2/4)',
+                    placeHolder: '请选择源编码',
+                })
+                : undefined);
+            const targetEncoding = await vscode.window.showQuickPick(VSCODE_ENCODING_ITEMS, {
+                title: '批量转换文件编码 (3/4)',
+                placeHolder: '请选择目标编码',
+            });
+            if (!targetEncoding) return;
+
+            const targetFiles = await vscode.window.showQuickPick(files, {
+                title: '批量转换文件编码 (4/4)',
+                placeHolder: '请选择需要转换编码的文件',
+                canPickMany: true,
+            });
+            if (!targetFiles?.length) return;
+
+            for (const file of targetFiles) {
+                const absFilePath = getAbsolutePath(file);
+
+                transcodingFile(absFilePath, targetEncoding.value, originEncoding?.value);
+            }
+        },
+    );
+
+    extensionContext?.subscriptions.push(commandChangeEncodingDisposable);
 }
 
 function initModeStatusBar() {
