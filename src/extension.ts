@@ -323,6 +323,7 @@ async function buildTask() {
     const resCompilerPath = getConfig('resCompilerPath', 'windres') as string;
     const compilerPath    = getConfig('compilerPath', 'gcc') as string;
     const compilerOptions = getConfig('compilerOptions', []) as string[];
+    const linkerPath      = getConfig('linkerPath', 'gcc') as string;
     const linkerOptions   = getConfig('linkerOptions', []) as string[];
     const linkerLibs      = getConfig('linkerLibs', []) as string[];
     const linkerLibPaths  = getConfig('linkerLibPaths', []) as string[];
@@ -383,7 +384,7 @@ async function buildTask() {
     }
 
     // 构建链接命令
-    let cmd = `${compilerPath} -o ${relBinPath} ${objs.join(' ')}`;
+    let cmd = `${linkerPath} -o ${relBinPath} ${objs.join(' ')}`;
 
     if (linkerLibPaths.length) {
         cmd += ' ';

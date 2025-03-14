@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -134,7 +134,9 @@
           },
           "default": [
             "main.c",
+            "main.cpp",
             "lib/**/*.c",
+            "lib/**/*.cpp",
             "src/**/*.rc"
           ]
         },
@@ -176,6 +178,12 @@
             "-Wall",
             "-O3"
           ]
+        },
+        "C_Project_Runner.linkerPath": {
+          "description": "链接器路径",
+          "scope": "resource",
+          "type": "string",
+          "default": "g++"
         },
         "C_Project_Runner.linkerOptions": {
           "description": "链接选项, 链接时会附加到目标文件之后, 例: [\"-lws2_32\", \"-mwindows\"]",

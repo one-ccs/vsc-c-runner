@@ -11,7 +11,7 @@ import { md5, getAbsolutePath } from './fileUtils';
 export function getConfigIds() {
     const buildOption    = ['buildPath', 'compilerPath', 'compilerOptions',];
     const buildResOption = ['resCompilerPath',];
-    const linkOption     = ['linkerOptions', 'linkerLibs', 'linkerLibPaths'];
+    const linkOption     = ['linkerPath', 'linkerOptions', 'linkerLibs', 'linkerLibPaths'];
     const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
 
     return {

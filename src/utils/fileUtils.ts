@@ -8,7 +8,7 @@ import * as vscode from 'vscode';
 import { getConfigIds, getBuildPath } from './configUtils';
 import { BuildModes } from '../types/enums';
 import { buildMode, outputChannel } from '../extension';
-import { EXT_RESOURCE, EXT_SOURCE, FILE_ENCODING, RECORD_FILE_NAME } from '../params/params';
+import { S_H_MAP, EXT_RESOURCE, EXT_SOURCE, FILE_ENCODING, RECORD_FILE_NAME, EXT_HEADER } from '../params/params';
 import { deepCopy } from './copyUtil';
 
 
@@ -19,6 +19,15 @@ import { deepCopy } from './copyUtil';
  */
 export function md5(data: crypto.BinaryLike): string {
     return crypto.createHash('md5').update(data).digest('hex');
+}
+
+/**
+ * 判断是否为头文件
+ * @param path 文件路径
+ * @returns bool
+ */
+export function isHeaderFile(path: string) {
+    return EXT_HEADER.some(ext => path.endsWith(ext));
 }
 
 /**
@@ -65,6 +74,20 @@ export async function transcodingFile(filePath: string, targetEncoding: string, 
     } catch (err) {
         outputChannel?.appendLine(`转换文件编码成功: "${filePath}" "${originEncoding}" -> "${targetEncoding}"`);
     }
+}
+
+/**
+ * 获取文件扩展名
+ * @param path 文件路径
+ * @returns 文件扩展名 (不含 "."), 未知则返回空字符串
+ */
+export function getExt(path: string): string {
+    const parts = path.split('.');
+
+    if (parts.length > 1) {
+        return parts[parts.length - 1];
+    }
+    return '';
 }
 
 /**
@@ -245,11 +268,11 @@ export function copyDir(srcDir: string, destDir: string): boolean {
 
 /**
  * 计算文件 md5 值
- * @param filePath 文件路径
+ * @param filePath 文件绝对路径
  * @returns md5
  */
 function getFileMd5(filePath: string): string {
-    const buffer = fs.readFileSync(getAbsolutePath(filePath), { encoding: FILE_ENCODING, flag: 'r' }).trim();
+    const buffer = fs.readFileSync(filePath, { encoding: FILE_ENCODING, flag: 'r' }).trim();
     return md5(buffer);
 }
 
@@ -306,10 +329,30 @@ export function analysisFiles(files: string[], record: {[key: string]: any}): {
     };
     // 若记录不存在, 或文件 md5 值不同，或编译配置变化, 则需要编译
     for (const file of files) {
-        const md5 = getFileMd5(file);
+        const md5 = getFileMd5(getAbsolutePath(file));
 
         record[buildMode][file] = md5;
         if (oldRecord[buildMode][file] !== md5) diffFiles.push(file);
+
+        if (isSourceFile(file)) {
+            const headerFile = changeExt(file, S_H_MAP[getExt(file)]);
+            const absHeaderFile = getAbsolutePath(headerFile);
+
+            if (isPathExists(absHeaderFile)) {
+                const headerMd5 = getFileMd5(absHeaderFile);
+
+                record[buildMode][headerFile] = headerMd5;
+                if (oldRecord[buildMode][headerFile] !== headerMd5) diffFiles.push(headerFile);
+            }
+        }
+    }
+    // lib 头文件更新，重新编译所有 lib 文件
+    if (diffFiles.some(file => isHeaderFile(file) && file.startsWith('lib/'))) {
+        diffFiles.push(...files.filter(file => !diffFiles.includes(file) && isSourceFile(file) && file.startsWith('lib/')));
+    }
+    // 其它头文件更新，重新编译除 lib 文件外的所有文件
+    if (diffFiles.some(file => isHeaderFile(file) && !file.startsWith('lib/'))) {
+        diffFiles.push(...files.filter(file => !diffFiles.includes(file) && isSourceFile(file) && !file.startsWith('lib/')));
     }
 
     // 添加文件（已在编译列表，会自动链接），减少文件需要强制重新链接

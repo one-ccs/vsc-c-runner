@@ -2,7 +2,9 @@ export const EXTENSION_NAME      = 'C_Project_Runner';
 export const RECORD_FILE_NAME    = '.record';
 export const FILE_ENCODING       = 'utf8';
 export const EXT_SOURCE          = ['.c', '.cpp'];
+export const EXT_HEADER          = ['.h', '.hpp'];
 export const EXT_RESOURCE        = ['.rc'];
+export const S_H_MAP: { [key: string]: string } = { c: 'h', cpp: 'hpp' };
 
 export const CHANGE_ENCODING_MODE_ITEMS = [
     { label: '自动检测 => 指定类型', value: 'auto' },
