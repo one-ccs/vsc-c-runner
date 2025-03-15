@@ -110,7 +110,7 @@ export function activate(context: vscode.ExtensionContext) {
 
                 // 拷贝公共文件
                 for (const _public of publics) {
-                    if (!copyDir(getAbsolutePath(_public), buildBinFolder)) showWarning('拷贝公共文件失败！');
+                    copyDir(getAbsolutePath(_public), buildBinFolder);
                 }
                 if (record) dumpRecord(record);
                 isBuildAndRun && runTask();
@@ -314,27 +314,28 @@ function initRebuildStatusBar() {
 async function buildTask() {
     // 触发工作区保存
     await vscode.commands.executeCommand('workbench.action.files.saveAll');
-    record                = loadRecord();
-    const includes        = getConfig('includes', []) as string[];
-    const excludes        = getConfig('excludes', []) as string[];
-    const buildPath       = getBuildPath();
-    const buildObjFolder  = pathJoin(buildPath, buildMode, 'obj');
-    const buildBinFolder  = pathJoin(buildPath, buildMode, 'bin');
-    const resCompilerPath = getConfig('resCompilerPath', 'windres') as string;
-    const compilerPath    = getConfig('compilerPath', 'gcc') as string;
-    const compilerOptions = getConfig('compilerOptions', []) as string[];
-    const linkerPath      = getConfig('linkerPath', 'gcc') as string;
-    const linkerOptions   = getConfig('linkerOptions', []) as string[];
-    const linkerLibs      = getConfig('linkerLibs', []) as string[];
-    const linkerLibPaths  = getConfig('linkerLibPaths', []) as string[];
-    const binName         = `${vscode.workspace.name}.exe`;
-    const absBinPath      = pathJoin(buildBinFolder, binName);
-    const relBinPath      = getRelativePath(absBinPath);
-    const isBinFileExists = isPathExists(absBinPath);
-    const files           = await getFiles(includes, excludes);
+    record                   = loadRecord();
+    const includes           = getConfig('includes', []) as string[];
+    const excludes           = getConfig('excludes', []) as string[];
+    const buildPath          = getBuildPath();
+    const buildObjFolder     = pathJoin(buildPath, buildMode, 'obj');
+    const buildBinFolder     = pathJoin(buildPath, buildMode, 'bin');
+    const resCompilerPath    = getConfig('resCompilerPath', 'windres') as string;
+    const resCompilerOptions = getConfig('resCompilerOptions', []) as string[];
+    const compilerPath       = getConfig('compilerPath', 'gcc') as string;
+    const compilerOptions    = getConfig('compilerOptions', []) as string[];
+    const linkerPath         = getConfig('linkerPath', 'gcc') as string;
+    const linkerOptions      = getConfig('linkerOptions', []) as string[];
+    const linkerLibs         = getConfig('linkerLibs', []) as string[];
+    const linkerLibPaths     = getConfig('linkerLibPaths', []) as string[];
+    const binName            = `${vscode.workspace.name}.exe`;
+    const absBinPath         = pathJoin(buildBinFolder, binName);
+    const relBinPath         = getRelativePath(absBinPath);
+    const isBinFileExists    = isPathExists(absBinPath);
+    const files              = await getFiles(includes, excludes);
     const { diffFiles, rebuild, rebuildRes, relink } = analysisFiles(files, record);
-    const cmds            = [];  // 编译命令列表
-    const objs            = [];  // 目标文件列表
+    const cmds               = [];  // 编译命令列表
+    const objs               = [];  // 目标文件列表
 
     // 构建编译命令
     for (const file of files) {
@@ -360,7 +361,7 @@ async function buildTask() {
 
             objs.push(relResPath);
             if (rebuildRes || diffFiles.includes(file) || !isPathExists(absResPath)) {
-                const cmd = `${resCompilerPath} -J rc -O coff -i ${file} -o ${relResPath}`;
+                const cmd = `${resCompilerPath} ${resCompilerOptions.join(' ')} ${file} -o ${relResPath}`;
 
                 cmds.push(cmd);
             }

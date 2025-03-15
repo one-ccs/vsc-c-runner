@@ -239,9 +239,10 @@ export function rmdirRecursive(path: string) {
  * @param destDir 目标目录
  * @returns 是否成功
  */
-export function copyDir(srcDir: string, destDir: string): boolean {
+export function copyDir(srcDir: string, destDir: string) {
+    if (!isPathExists(srcDir)) return;
+
     try {
-        if (!isPathExists(srcDir)) return false;
         fs.mkdirSync(destDir, { recursive: true });
         const files = fs.readdirSync(srcDir, { withFileTypes: true });
 
@@ -260,9 +261,7 @@ export function copyDir(srcDir: string, destDir: string): boolean {
     } catch (err) {
         outputChannel?.appendLine(`复制目录失败: ${srcDir} -> ${destDir}`);
         console.warn('复制目录失败: ', err);
-        return false;
     }
-    return true;
 }
 
 

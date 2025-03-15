@@ -2,7 +2,7 @@
   "name": "vsc-c-runner",
   "displayName": "C Project Runner",
   "description": "编译并运行C语言工程项目。",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "publisher": "one-ccs",
   "license": "MIT",
   "icon": "icon.png",
@@ -160,6 +160,21 @@
           "scope": "resource",
           "type": "string",
           "default": "windres"
+        },
+        "C_Project_Runner.resCompilerOptions": {
+          "description": "资源编译选项, 资源编译时会附加到目标文件之前, 例: [\"-J\", \"rc\"]",
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "-J",
+            "rc",
+            "-O",
+            "coff",
+            "-i"
+          ]
         },
         "C_Project_Runner.compilerPath": {
           "description": "编译器路径",
